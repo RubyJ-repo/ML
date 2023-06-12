@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exercise Tracker</title>
+</head>
+<body>
+    <h1>Exercise Tracker</h1>
+    <form action="/log" method="post">
+        <label for="exercise">Exercise:</label>
+        <input type="text" name="exercise" required><br>
+        <label for="duration">Duration (minutes):</label>
+        <input type="number" name="duration" required><br>
+        <input type="submit" value="Log Exercise">
+    </form>
+    <br>
+    <a href="/log">View Exercise Log</a>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exercise Log</title>
+</head>
+<body>
+    <h1>Exercise Log</h1>
+    <table>
+        <tr>
+            <th>Exercise</th>
+            <th>Duration (minutes)</th>
+        </tr>
+        {% for exercise in exercises %}
+        <tr>
+            <td>{{ exercise.exercise }}</td>
+            <td>{{ exercise.duration }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="/">Back to Home</a>
+</body>
+</html>

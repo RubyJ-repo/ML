@@ -1,0 +1,95 @@
+import pygame
+import numpy as np
+from tensorflow import keras
+from collections import deque
+import random
+
+# Define the Deep Q-Network (DQN) agent
+class DQNAgent:
+    def __init__(self, state_size, action_size):
+        self.state_size = state_size
+        self.action_size = action_size
+        self.memory = deque(maxlen=2000)
+        self.gamma = 0.95  # discount rate
+        self.epsilon = 1.0  # exploration rate
+        self.epsilon_decay = 0.995
+        self.epsilon_min = 0.01
+        self.learning_rate = 0.001
+        self.model = self._build_model()
+
+    def _build_model(self):
+        model = keras.Sequential()
+        model.add(keras.layers.Dense(24, input_dim=self.state_size, activation='relu'))
+        model.add(keras.layers.Dense(24, activation='relu'))
+        model.add(keras.layers.Dense(self.action_size, activation='linear'))
+        model.compile(loss='mse', optimizer=keras.optimizers.Adam(lr=self.learning_rate))
+        return model
+
+    def remember(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
+
+    def act(self, state):
+        if np.random.rand() <= self.epsilon:
+            return random.randrange(self.action_size)
+        q_values = self.model.predict(state)
+        return np.argmax(q_values[0])
+
+    def replay(self, batch_size):
+        minibatch = random.sample(self.memory, batch_size)
+        for state, action, reward, next_state, done in minibatch:
+            target = reward
+            if not done:
+                target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
+            target_f = self.model.predict(state)
+            target_f[0][action] = target
+            self.model.fit(state, target_f, epochs=1, verbose=0)
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+
+# Initialize the game environment
+pygame.init()
+width, height = 288, 512
+screen = pygame.display.set_mode((width, height))
+clock = pygame.time.Clock()
+game_font = pygame.font.Font('font.ttf', 40)
+
+# Define game parameters
+state_size = 2
+action_size = 2
+agent = DQNAgent(state_size, action_size)
+batch_size = 32
+score = 0
+
+# Game loop
+while True:
+    state = np.array([score, height - 50])
+    state = np.reshape(state, [1, state_size])
+
+    # Agent selects an action
+    action = agent.act(state)
+
+    # Perform the action and observe new state and reward
+    if action == 1:
+        score += 1
+    else:
+        score -= 1
+
+    next_state = np.array([score, height - 50])
+    next_state = np.reshape(next_state, [1, state_size])
+
+    # Store the transition in agent's memory
+    agent.remember(state, action, 0, next_state, False)
+
+    # Update the current state
+    state = next_state
+
+    # Train the agent by replaying a batch of past experiences
+    if len(agent.memory) > batch_size:
+        agent.replay(batch_size)
+
+    # Render the game screen
+    screen.fill((0, 0, 0))
+    text_surface = game_font.render(str(score), True, (255, 255, 255))
+    screen.blit(text_surface, (width // 2 - text_surface.get_width() // 2, height // 2 - text_surface.get_height() // 2))
+    pygame.display.update()
+    clock.tick(60)
